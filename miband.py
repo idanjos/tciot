@@ -93,7 +93,7 @@ class Delegate(DefaultDelegate):
                     steps = struct.unpack("B", data[i + 2:i + 3])[0]
                     heart_rate = struct.unpack("B", data[i + 3:i + 4])[0]
                     if timestamp < self.device.end_timestamp:
-                        self.device.activity_callback(timestamp,category,intensity,steps,heart_rate)
+                        self.device.activity_callback(timestamp,category,intensity,steps,heart_rate, self.device.mac_address)
                     i += 4
 
         #music controls
@@ -127,7 +127,7 @@ class Delegate(DefaultDelegate):
 class miband(Peripheral):
     _send_rnd_cmd = struct.pack('<2s', b'\x02\x00')
     _send_enc_key = struct.pack('<2s', b'\x03\x00')
-    def __init__(self, mac_address,key=None, timeout=0.5, debug=False):
+    def __init__(self, mac_address,key=None, timeout=0.2, debug=False):
         FORMAT = '%(asctime)-15s %(name)s (%(levelname)s) > %(message)s'
         logging.basicConfig(format=FORMAT)
         log_level = logging.WARNING if not debug else logging.DEBUG
@@ -600,6 +600,9 @@ class miband(Peripheral):
             buf+=bytes(track,'utf-8')
             buf+=bytes([0])
         self.writeChunked(3,buf)
+    
+    def disconnectDevice(self):
+        self.disconnect()
 
 
 

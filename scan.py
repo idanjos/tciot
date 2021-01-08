@@ -1,4 +1,6 @@
 from bluepy.btle import Scanner, DefaultDelegate
+import miband4_console as mibandConnect
+import pika
 
 class ScanDelegate(DefaultDelegate):
     def __init__(self):
@@ -11,13 +13,22 @@ class ScanDelegate(DefaultDelegate):
             pass
 
 scanner = Scanner().withDelegate(ScanDelegate())
+matchList = list()
+
+connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+channel = connection.channel()
+
+with open("keys.txt") as search:
+    for line in search:
+        line = line.lower().rstrip()  # remove '\n' at end of line
+        matchList.append(line.split(" "))
 
 while True:
     scanner.scan(10)
     print("-------------")
-    print([x.addr for x in scanner.getDevices()])
+    devices =  scanner.getDevices()
+    print([x.addr for x in devices])
+    for device in devices:
+        key = next((x[1] for x in matchList if x[0] == str(device.addr)), None)
+        mibandConnect.connect(device.addr, key)
 
-for dev in devices:
-    print ("Device %s (%s), RSSI=%d dB" % (dev.addr, dev.addrType, dev.rssi))
-    for (adtype, desc, value) in dev.getScanData():
-        print ("  %s = %s" % (desc, value))
