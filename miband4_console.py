@@ -10,11 +10,14 @@ from datetime import datetime
 from bluepy.btle import BTLEDisconnectError
 from miband import miband
 import pika
+import logging
 
 channel = None
+connection = None
 
 def connect(mac_addr, auth_key = None):
     global channel
+    global connection
     MAC_ADDR = mac_addr
     AUTH_KEY = str(auth_key)
     # Validate MAC address
@@ -41,8 +44,12 @@ def connect(mac_addr, auth_key = None):
             band = miband(MAC_ADDR, AUTH_KEY, debug=True)
             success = band.initialize()
             if success:
-                connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-                channel = connection.channel()
+                try:
+                    logging.getLogger("pika").propagate = False
+                    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+                    channel = connection.channel()
+                except: 
+                    pass
                 get_activity_logs(band)
         else:
             band = miband(MAC_ADDR, debug=True)
@@ -57,7 +64,9 @@ def connect(mac_addr, auth_key = None):
     if type(band) is miband:
         band.disconnectDevice()
     
-    connection.close()
+    if connection != None:
+        connection.close()
+
     return True
         
 def activity_log_callback(timestamp,c,i,s,h,m):
@@ -68,9 +77,17 @@ def activity_log_callback(timestamp,c,i,s,h,m):
                         body="{}: category: {}; intensity {}; steps {}; heart rate {}; mac {};\n".format( timestamp.strftime('%d.%m - %H:%M'), c, i ,s ,h,m))
     print("{}: category: {}; intensity {}; steps {}; heart rate {}; mac {};\n".format( timestamp.strftime('%d.%m - %H:%M'), c, i ,s ,h,m))
 
+def activity_log_callback_print(timestamp,c,i,s,h,m):
+    print("{}: category: {}; intensity {}; steps {}; heart rate {}; mac {};\n".format( timestamp.strftime('%d.%m - %H:%M'), c, i ,s ,h,m))
+
 #Needs auth    
 def get_activity_logs(band):
+    global channel
     temp = datetime.now()
-    band.get_activity_betwn_intervals(datetime(temp.year,temp.month,temp.day),datetime.now(),activity_log_callback)
+    if channel != None:
+        band.get_activity_betwn_intervals(datetime(temp.year,temp.month,temp.day),datetime.now(),activity_log_callback)
+    else:
+        band.get_activity_betwn_intervals(datetime(temp.year,temp.month,temp.day),datetime.now(),activity_log_callback_print)
+
     while band.waitForNotifications(5):
         pass

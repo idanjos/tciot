@@ -1,8 +1,22 @@
 #!/bin/bash
 # run this script with sudo
 # sudo ./run <path to your ssh keys>
+
+if [ "$EUID" -ne 0 ]
+  then echo "Please run as root"
+  exit
+fi
+
+if [ -n "$1" ]; then
+  echo "Path to private key: $1"
+else
+  echo "The key parameter was not supplied."
+  exit 1
+fi
+
 trap 'pkill ssh' INT TERM ERR
 trap 'pkill ssh' EXIT
+echo "Connecting to VPS Server"
 ssh -i $1 -L 5672:85.217.171.67:5672  root@85.217.171.67 -fN
 sleep 5
 python3 scan.py 
