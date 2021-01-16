@@ -74,7 +74,7 @@ def activity_log_callback(timestamp,c,i,s,h,m):
     channel.queue_declare(queue='hello')
     channel.basic_publish(exchange='',
                         routing_key='hello',
-                        body="{}: category: {}; intensity {}; steps {}; heart rate {}; mac {};\n".format( timestamp.strftime('%d.%m - %H:%M'), c, i ,s ,h,m))
+                        body='{"id": 2, "size": 50, "raw":"{}: category: {}; intensity {}; steps {}; heart rate {}; mac {}"}'.format( timestamp.strftime('%d.%m - %H:%M'), c, i ,s ,h,m))
     print("{}: category: {}; intensity {}; steps {}; heart rate {}; mac {};\n".format( timestamp.strftime('%d.%m - %H:%M'), c, i ,s ,h,m))
 
 def activity_log_callback_print(timestamp,c,i,s,h,m):
